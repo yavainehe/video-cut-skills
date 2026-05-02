@@ -19,12 +19,19 @@ The workflow is review-first:
 它的流程是“先审核，再剪辑”：
 
 Transcribe source videos. 转录原始视频。
+
 Use Whisper's original segments as the editing unit. 使用 Whisper 原始 segment 作为选段单位。
+
 Compare the transcript with the written script. 把视频转录文本和原始文字稿进行比对。
+
 Search from the end of the footage backward, because the last repeated take is often the best one. 从视频后面往前找，因为重复录制时，最后一遍往往是更顺的版本。
+
 Return selected clips in normal script order. 选完后再按文字稿正序排列。
+
 Generate a Markdown/JSON review list before rendering any video. 在真正生成视频前，先输出 Markdown/JSON 审核清单。
+
 Why This Exists / 为什么需要它
+
 Normal pause removal is not enough for this kind of footage. The main problem is not only silence; it is repeated attempts, false starts, partial sentences, and re-recorded lines.
 
 这类视频不能只靠“删除停顿”来粗剪。真正的问题不只是静音，而是反复重录、说一半放弃、口误、残句、重复句，以及后面重新录了一版更完整的表达。
