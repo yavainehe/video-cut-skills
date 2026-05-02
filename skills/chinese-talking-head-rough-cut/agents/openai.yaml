@@ -1,0 +1,4 @@
+interface:
+  display_name: "中文口播粗剪"
+  short_description: "用 Whisper 倒序选段辅助中文口播粗剪审核。"
+  default_prompt: "请按中文口播粗剪流程，把素材转录后用 Whisper segment 从后往前选择最后一版，并先输出审核清单。"
