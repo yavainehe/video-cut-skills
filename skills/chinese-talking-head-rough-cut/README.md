@@ -1,97 +1,81 @@
-# Chinese Talking-Head Rough Cut
+# Video Cut Skills / 视频剪辑 Skills
 
-This skill helps with rough-cut editing for Chinese solo talking-head videos, especially when the speaker repeatedly records the same sentence until the last version is the smoothest.
+This repository stores reusable Codex skills for video editing workflows.
 
-It is designed for creators who want AI to clean up spoken drafts, not to make complex cinematic edits.
+这个仓库用于保存可复用的 Codex 视频剪辑技能。
 
-## What It Does
+## Included Skills / 已包含的 Skill
 
-The workflow:
+### Chinese Talking-Head Rough Cut / 中文口播粗剪
 
-1. Transcribe each source video.
-2. Use Whisper's original segments as the candidate editing units.
-3. Compare those segments with the creator's written script.
-4. Search from the end of the footage backward, because later repeated takes are usually better.
-5. Save the chosen segments back in normal script order.
-6. Output a Markdown review list before any video is rendered.
+Path / 路径：
 
-This lets a human check the selected takes before generating an EDL or final video.
+`skills/chinese-talking-head-rough-cut`
 
-## Why Search From Back To Front
+This skill is for Chinese solo talking-head videos, especially knowledge, education, and medical explainers where the speaker repeatedly records the same sentence until the final version is smoother.
 
-In this recording style, the speaker may say sentence A, move to sentence B, then decide A was not good and re-record A and B again. A normal top-to-bottom search often keeps an early failed attempt.
+这个 skill 面向中文单人口播视频，尤其适合知识类、教育类、医学科普类内容。它针对的典型场景是：创作者会反复录同一句或同一段，通常最后一版更顺、更接近成片。
 
-This skill assumes:
+## What It Does / 它做什么
 
-- repeated material later in the same batch is usually closer to the final intended delivery;
-- the selected clips must still be arranged in normal script order;
-- uncertain matches should be shown for review, not silently used.
+The workflow is review-first:
 
-## Whisper And FunASR Roles
+它的流程是“先审核，再剪辑”：
 
-Current tested rule:
+1. Transcribe source videos.
+   转录原始视频。
+2. Use Whisper's original segments as the editing unit.
+   使用 Whisper 原始 segment 作为选段单位。
+3. Compare the transcript with the written script.
+   把视频转录文本和原始文字稿进行比对。
+4. Search from the end of the footage backward, because the last repeated take is often the best one.
+   从视频后面往前找，因为重复录制时，最后一遍往往是更顺的版本。
+5. Return selected clips in normal script order.
+   选完后再按文字稿正序排列。
+6. Generate a Markdown/JSON review list before rendering any video.
+   在真正生成视频前，先输出 Markdown/JSON 审核清单。
 
-- Whisper is used for segment boundaries and candidate selection.
-- FunASR can be used as a Chinese text reference.
-- FunASR should not decide cut boundaries in this workflow.
+## Why This Exists / 为什么需要它
 
-This is because the tested videos showed that Whisper's raw segments matched the user's manual review better, while FunASR could be useful for reading Chinese text but sometimes created boundary or timestamp problems.
+Normal pause removal is not enough for this kind of footage. The main problem is not only silence; it is repeated attempts, false starts, partial sentences, and re-recorded lines.
 
-## Included Script
+这类视频不能只靠“删除停顿”来粗剪。真正的问题不只是静音，而是反复重录、说一半放弃、口误、残句、重复句，以及后面重新录了一版更完整的表达。
 
-`scripts/select_whisper_bottom_up.py` reads:
+This workflow tries to identify the last usable version of each script unit, while keeping the creator in control before any final video is generated.
 
-- a written script Markdown file;
-- one or more transcript JSON files containing Whisper-style `segments`;
-- output paths for a Markdown and JSON report.
+这个流程的目标是：帮创作者找到每个稿件片段最后一个可用版本，但在生成最终视频前，仍然保留人工审核和确认。
 
-Example:
+## Current Status / 当前状态
 
-```bash
-python scripts/select_whisper_bottom_up.py \
-  --script samples/script.md \
-  --transcript samples/edit/transcripts/FragmentVideo_001.json \
-  --transcript samples/edit/transcripts/FragmentVideo_002.json \
-  --out-md samples/edit/whisper_bottom_up_candidates.md \
-  --out-json samples/edit/whisper_bottom_up_candidates.json
-```
+Experimental but promising.
 
-Useful options:
+目前仍是实验阶段，但方向已经验证可行。
 
-- `--threshold`: similarity threshold for accepted matches. Default: `0.58`.
-- `--max-group`: maximum adjacent Whisper segments to merge into one candidate. Default: `5`.
-- `--max-gap`: maximum allowed gap in seconds between merged segments. Default: `2.0`.
+Tested so far:
 
-## Output
+已经测试出的结论：
 
-The Markdown report contains:
+- Whisper segments worked better than FunASR boundaries for selecting clips.
+  用 Whisper segment 做选段单位，比用 FunASR 边界更适合这个任务。
+- FunASR can still be useful as a Chinese text reference.
+  FunASR 仍然可以作为中文文本参考。
+- Bottom-up selection matched the creator's manual review style better than top-down matching.
+  从后往前选，比从前往后选更符合反复重录的口播习惯。
+- Markdown review output is more useful than immediately rendering a video.
+  先输出 Markdown 审核清单，比直接生成视频更适合调试和人工确认。
 
-- a normal-order stitching list;
-- one section per selected script unit;
-- the source video name;
-- Whisper segment number or range;
-- start and end time;
-- score, recall, and precision;
-- Whisper text for manual checking;
-- low-confidence related clips in a review-only section.
+## Safety Rules / 安全规则
 
-The JSON report stores the same information for later conversion into an EDL.
-
-## Current Limitations
-
-This is still an experimental rough-cut workflow.
-
-- It does not guarantee perfect semantic understanding.
-- It may miss words when Whisper text is imperfect.
-- It may need manual correction when a line is split awkwardly.
-- It should not render or delete anything without user approval.
-- It should not match script sections whose source videos have not been provided.
-
-## Safe Usage Rules
-
-- Never modify original source videos.
-- Put all generated files under an output folder such as `edit/`.
+- Do not modify original videos.
+  不修改原始视频。
+- Put generated files under an output folder such as `edit/`.
+  所有生成文件放在 `edit/` 等输出目录里。
 - Generate review candidates before rendering.
-- Ask the creator to approve or correct the list.
-- Avoid automatic fades for Chinese speech unless requested.
-- Use Chinese-friendly subtitle grouping, not uppercase English two-word chunks.
+  先生成审核候选，再渲染视频。
+- Ask for human approval before creating the final EDL or video.
+  生成最终 EDL 或视频前，需要人工确认。
+- Avoid automatic fades unless requested.
+  不默认添加自动淡入淡出。
+- Use Chinese-friendly subtitles, not uppercase English two-word chunks.
+  中文字幕应按中文自然语义分组，不使用英文两词一组、全部大写的字幕样式。
+
